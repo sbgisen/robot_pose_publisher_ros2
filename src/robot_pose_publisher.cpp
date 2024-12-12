@@ -35,17 +35,20 @@ public:
     this->declare_parameter<std::string>("map_frame", "map");
     this->declare_parameter<std::string>("base_frame", "base_link");
     this->declare_parameter<bool>("is_stamped", false);
+    this->declare_parameter<int>("timer_period_ms", 50);
 
     this->get_parameter("map_frame", map_frame_);
     this->get_parameter("base_frame", base_frame_);
     this->get_parameter("is_stamped", is_stamped_);
+    this->get_parameter("timer_period_ms", timer_period_ms_);
 
     if (is_stamped_) {
       publisher_stamp_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("robot_pose", 1);
     } else {
       publisher_ = this->create_publisher<geometry_msgs::msg::Pose>("robot_pose", 1);
     }
-    timer_ = this->create_wall_timer(50ms, [this] { timerCallback(); });
+    std::chrono::milliseconds duration(timer_period_ms_);
+    timer_ = this->create_wall_timer(duration, [this] { timerCallback(); });
   }
 
 private:
@@ -53,7 +56,8 @@ private:
   {
     geometry_msgs::msg::TransformStamped transform_stamped;
     try {
-      transform_stamped = tf_buffer_->lookupTransform(map_frame_, base_frame_, this->now());
+      transform_stamped =
+        tf_buffer_->lookupTransform(map_frame_, base_frame_, this->now(), rclcpp::Duration::from_seconds(1));
     } catch (tf2::TransformException & ex) {
       return;
     }
@@ -80,6 +84,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_stamp_;
   rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr publisher_;
   bool is_stamped_ = false;
+  int timer_period_ms_ = 50;
   std::string base_frame_ = "base_link";
   std::string map_frame_ = "map";
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
