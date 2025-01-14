@@ -57,7 +57,7 @@ private:
     geometry_msgs::msg::TransformStamped transform_stamped;
     try {
       transform_stamped =
-        tf_buffer_->lookupTransform(map_frame_, base_frame_, this->now(), rclcpp::Duration::from_seconds(1));
+        tf_buffer_->lookupTransform(map_frame_, base_frame_, rclcpp::Time(0), rclcpp::Duration::from_seconds(1));
     } catch (tf2::TransformException & ex) {
       return;
     }
